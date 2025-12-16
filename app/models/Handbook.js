@@ -1,4 +1,4 @@
-// models/Handbook.js
+
 import mongoose from "mongoose";
 
 const HandbookSchema = new mongoose.Schema(

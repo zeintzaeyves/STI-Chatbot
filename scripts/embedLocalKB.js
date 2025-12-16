@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import OpenAI from "openai";
 import { knowledgeBase } from "../data/knowledgeBase.js";
-import LocalKBChunk from "../app/models/LocalKBChunk.js";
+import LocalKBChunk from "@models/LocalKBChunk.js";
 import dotenv from "dotenv";
 dotenv.config();
 

@@ -1,10 +1,10 @@
 // app/api/indexer/route.js
 import { NextResponse } from "next/server";
-import { connectDB } from "../../../lib/mongodb";
-import Handbook from "../../../models/Handbook";
-import HandbookChunk from "../../../models/HandbookChunk";
-import { chunkText } from "../../../lib/text";
-import { getEmbedding } from "../../../lib/embeddings";
+import { connectDB } from "@lib/mongodb";
+import Handbook from "@models/Handbook";
+import HandbookChunk from "@models/HandbookChunk";
+import { chunkText } from "@lib/text";
+import { getEmbedding } from "@lib/embeddings";
 
 export async function POST(req) {
   try {

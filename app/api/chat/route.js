@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import OpenAI from "openai";
-import HandbookChunk from "../../models/HandbookChunk.js";
-import Memory from "../../models/Memory.js";
-import Inquiry from "../../models/Inquiry.js";
+import HandbookChunk from "@models/HandbookChunk.js";
+import Memory from "@models/Memory.js";
+import Inquiry from "@models/Inquiry.js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 

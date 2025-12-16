@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import mongoose from "mongoose";
-import Memory from "../models/Memory.js";
+import Memory from "@models/Memory.js";
 
 const SESSION_TTL_MINUTES = 30;
 

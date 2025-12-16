@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "../../../lib/mongodb";
-import Handbook from "../../../models/Handbook";
-import HandbookChunk from "../../../models/HandbookChunk";
-import HandbookGlobalContext from "../../../models/HandbookGlobalContext";
-import { chunkText } from "../../../lib/text";
+import { connectDB } from "@/lib/mongodb";
+import Handbook from "@models/Handbook";
+import HandbookChunk from "@models/HandbookChunk";
+import HandbookGlobalContext from "@models/HandbookGlobalContext";
+import { chunkText } from "@lib/text";
 
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import OpenAI from "openai";
 import { detectSectionTitle } from "./sectiondetector/router";
-import progressEmitter from "../../../lib/progressEmitter";
+import progressEmitter from "@lib/progressEmitter";
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 

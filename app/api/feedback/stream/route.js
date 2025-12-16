@@ -1,5 +1,5 @@
-import { connectDB } from "../../../lib/mongodb";
-import Feedback from "../../../models/Feedback";
+import { connectDB } from "@/lib/mongodb";
+import Feedback from "@models/Feedback";
 
 export async function GET() {
   await connectDB();

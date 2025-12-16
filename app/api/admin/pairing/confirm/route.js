@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
-import PairingToken from "../../../../models/PairingToken";
+import PairingToken from "@models/PairingToken";
 
 export async function POST(req) {
   await mongoose.connect(process.env.MONGODB_URI);

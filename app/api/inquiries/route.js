@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "../../lib/mongodb";
-import Inquiry from "../../models/Inquiry";
+import { connectDB } from "@lib/mongodb";
+import Inquiry from "@models/Inquiry";
 
 // Incremental ID: INQ-0001, INQ-0002, ...
 async function generateInquiryId() {

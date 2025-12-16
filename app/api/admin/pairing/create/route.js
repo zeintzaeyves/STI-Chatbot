@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import mongoose from "mongoose";
-import PairingToken from "../../../../models/PairingToken.js";
+import PairingToken from "@models/PairingToken.js";
 
 export async function POST() {
   try {

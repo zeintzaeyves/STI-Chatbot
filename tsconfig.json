@@ -23,13 +23,10 @@
       }
     ],
     "baseUrl": ".",
-    "paths": {
-      "@lib/*": [
-        "lib/*"
-      ],
-      "@models/*": [
-        "models/*"
-      ]
+      "paths": {
+      "@models/*": ["models/*"],
+      "@lib/*": ["lib/*"],
+      "@components/*": ["components/*"]
     }
   },
   "include": [

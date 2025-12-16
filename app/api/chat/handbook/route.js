@@ -1,8 +1,8 @@
 // app/api/chat/handbook/route.js
 import { NextResponse } from "next/server";
-import { connectDB } from "../../../../lib/mongodb";
-import Handbook from "../../../../models/Handbook";
-import HandbookChunk from "../../../../models/HandbookChunk";
+import { connectDB } from "@lib/mongodb";
+import Handbook from "@models/Handbook";
+import HandbookChunk from "@models/HandbookChunk";
 import Fuse from "fuse.js";
 
 export async function POST(req) {

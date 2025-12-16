@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import mongoose from "mongoose";
-import PairingToken from "../../../../models/PairingToken";
-import AuthorizedDevice from "../../../../models/AuthorizedDevice";
+import PairingToken from "@models/PairingToken";
+import AuthorizedDevice from "@models/AuthorizedDevice";
 
 export async function GET(req) {
   await mongoose.connect(process.env.MONGODB_URI);

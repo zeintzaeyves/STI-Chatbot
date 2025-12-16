@@ -5,90 +5,62 @@ import QRCode from "qrcode";
 import { useRouter } from "next/navigation";
 
 export default function PairPage() {
-  const [qr, setQr] = useState<string>("");
-  const [token, setToken] = useState<string>("");
-  const [error, setError] = useState<string>("");
-
+  const [qr, setQr] = useState("");
+  const [token, setToken] = useState("");
   const router = useRouter();
 
-  // 1️⃣ Generate QR
   useEffect(() => {
     const generateQR = async () => {
-      try {
-        const res = await fetch("/api/admin/pairing/create", {
-          method: "POST",
-        });
+      const res = await fetch("/api/admin/pairing/create", { method: "POST" });
+      const { token } = await res.json();
+      setToken(token);
 
-        if (!res.ok) {
-          throw new Error("Failed to create pairing token");
-        }
-
-        const { token } = await res.json();
-        setToken(token);
-
-        const url = `${window.location.origin}/admin/confirm?token=${token}`;
-        const qrData = await QRCode.toDataURL(url);
-
-        setQr(qrData);
-      } catch (err) {
-        setError("Unable to generate QR code");
-      }
+      const url = `${window.location.origin}/admin/confirm?token=${token}`;
+      setQr(await QRCode.toDataURL(url));
     };
 
     generateQR();
   }, []);
 
-  // 2️⃣ Poll for confirmation (PC SIDE)
+  // polling
   useEffect(() => {
     if (!token) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(
-          `/api/admin/pairing/status?token=${token}`
-        );
-
-        const data = await res.json();
-
-        if (data.confirmed) {
-          clearInterval(interval);
-          router.replace("/admin/dashboard");
-        }
-      } catch (err) {
-        console.error("Polling error", err);
-      }
-    }, 2000); // every 2 seconds
-
-    return () => clearInterval(interval);
+    const i = setInterval(async () => {
+      const r = await fetch(`/api/admin/pairing/status?token=${token}`);
+      if (r.ok) router.replace("/admin/dashboard");
+    }, 2000);
+    return () => clearInterval(i);
   }, [token, router]);
 
-  if (error) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <p className="text-red-500">{error}</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-screen flex flex-col items-center justify-center gap-4">
-      <h1 className="text-xl font-semibold text-white">
-        Pair This Device
-      </h1>
+    <main
+      className="h-screen w-full bg-cover bg-center flex items-center justify-center"
+      style={{ backgroundImage: "url('/hero4.png')" }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-[#071426]/90 via-[#0d203b]/90 to-[#112e52]/90" />
 
-      <p className="text-white/70 text-sm text-center max-w-xs">
-        Scan this QR code using your phone to authorize this device.
-      </p>
+      <div className="relative z-10 w-[360px] bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 text-center shadow-2xl">
+        <h1 className="text-white text-xl font-semibold mb-2">
+          Pair This Device
+        </h1>
 
-      {qr ? (
-        <img
-          src={qr}
-          alt="Pairing QR"
-          className="w-56 h-56 bg-white p-2 rounded-lg"
-        />
-      ) : (
-        <p className="text-white">Generating QR…</p>
-      )}
-    </div>
+        <p className="text-white/70 text-sm mb-5">
+          Scan this QR code using your phone to authorize access.
+        </p>
+
+        {qr ? (
+          <img
+            src={qr}
+            className="mx-auto bg-white p-3 rounded-xl"
+          />
+        ) : (
+          <p className="text-white">Generating QR…</p>
+        )}
+
+        <p className="text-xs text-white/50 mt-4">
+          This code expires automatically
+        </p>
+      </div>
+    </main>
   );
 }

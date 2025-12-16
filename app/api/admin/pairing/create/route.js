@@ -12,7 +12,7 @@ export async function POST() {
     await PairingToken.create({
       token,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-      confirmed: false, // 👈 IMPORTANT
+      confirmed: false,
     });
 
     return NextResponse.json({ token });

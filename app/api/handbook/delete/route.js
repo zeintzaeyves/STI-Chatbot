@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "../../../lib/mongodb";
-import Handbook from "../../../models/Handbook";
-import HandbookChunk from "../../../models/HandbookChunk";
-import HandbookGlobalContext from "../../../models/HandbookGlobalContext";
+import { connectDB } from "@/lib/mongodb";
+import Handbook from "@models/Handbook";
+import HandbookChunk from "@models/HandbookChunk";
+import HandbookGlobalContext from "@models/HandbookGlobalContext";
 
 export async function DELETE(req) {
   try {

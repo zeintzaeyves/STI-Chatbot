@@ -1,5 +1,5 @@
-import { connectDB as dbConnect } from "../../../../lib/mongodb";
-import KnowledgeBase from "../../../../models/KnowledgeBase";
+import { connectDB } from "@/lib/mongodb";
+import KnowledgeBase from "@models/KnowledgeBase";
 import { normalizeQuestion } from "../../../../utils/normalizeQuestion";
 
 export async function PATCH(req) {

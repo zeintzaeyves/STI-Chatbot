@@ -1,6 +1,6 @@
-import dbConnect from "../../../lib/mongodb";
-import LocalKBChunk from "../../../models/LocalKBChunk";
-import Inquiry from "../../../models/Inquiry";
+import dbConnect from "@lib/mongodb";
+import LocalKBChunk from "@models/LocalKBChunk";
+import Inquiry from "@models/Inquiry";
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

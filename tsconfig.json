@@ -24,12 +24,9 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@lib/*": [
-        "lib/*"
-      ],
-      "@models/*": [
-        "models/*"
-      ]
+      "@/*": ["./*"],
+      "@lib/*": ["lib/*"],
+      "@models/*": ["models/*"]
     }
   },
   "include": [

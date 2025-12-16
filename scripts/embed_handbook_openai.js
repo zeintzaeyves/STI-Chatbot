@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
-import HandbookChunk from "../app/models/HandbookChunk.js";
+import HandbookChunk from "@models/HandbookChunk.js";
 
 dotenv.config();
 

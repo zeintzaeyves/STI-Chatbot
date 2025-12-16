@@ -1,5 +1,5 @@
-import { connectDB } from "../../../lib/mongodb.js";
-import Inquiry from "../../../models/Inquiry.js";
+import { connectDB } from "@/lib/mongodb";
+import Inquiry from "@models/Inquiry.js";
 
 export async function GET() {
   await connectDB();

@@ -16,7 +16,6 @@ export async function POST(req) {
     );
   }
 
-  // ✅ PHONE CONFIRMS ONLY
   pairing.confirmed = true;
   await pairing.save();
 

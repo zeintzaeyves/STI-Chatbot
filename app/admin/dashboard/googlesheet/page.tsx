@@ -1,10 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@components/ui/cards";
 import { motion } from "framer-motion";
 
-// ✅ Dynamically import Recharts components
+
 const ResponsiveContainer = dynamic(
   () => import("recharts").then((mod) => mod.ResponsiveContainer),
   { ssr: false }

@@ -1,58 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function ConfirmClient() {
-  const params = useSearchParams();
-  const token = params.get("token");
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      return;
-    }
+    const token = searchParams.get("token");
+    if (!token) return;
 
-    const confirm = async () => {
-      const res = await fetch("/api/admin/pairing/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-
-      setStatus(res.ok ? "success" : "error");
-    };
-
-    confirm();
-  }, [token]);
+    fetch("/api/admin/pairing/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    }).then(() => {
+      router.replace("/admin/dashboard");
+    });
+  }, [searchParams, router]);
 
   return (
-    <div className="h-screen flex items-center justify-center bg-slate-900 text-white px-6">
-      {status === "loading" && (
-        <p className="text-lg animate-pulse">
-          Authorizing device…
+    <div className="h-screen flex flex-col items-center justify-center gap-4 bg-[url('/hero4.png')] bg-cover bg-center">
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 text-center shadow-2xl">
+        <h1 className="text-white text-xl font-semibold">
+          Device Authorized
+        </h1>
+        <p className="text-white/70 text-sm mt-2">
+          You may now return to your computer.
         </p>
-      )}
-
-      {status === "success" && (
-        <div className="text-center space-y-2">
-          <p className="text-2xl">✅</p>
-          <p className="text-lg font-semibold">Device Authorized</p>
-          <p className="text-sm text-white/70">
-            You may now close this page.
-            <br />
-            The admin dashboard is opening on the computer.
-          </p>
-        </div>
-      )}
-
-      {status === "error" && (
-        <div className="text-center text-red-400">
-          <p className="text-lg font-semibold">Authorization failed</p>
-          <p className="text-sm">This QR code may be expired.</p>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

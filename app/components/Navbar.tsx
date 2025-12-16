@@ -73,46 +73,6 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Language Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-              className="flex items-center text-slate-100 hover:text-yellow-300 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 border border-white/10"
-            >
-              {language === "en" ? "English" : "Tagalog"}
-              <svg
-                className={`ml-1 h-4 w-4 transition-transform duration-200 ${
-                  isLanguageDropdownOpen ? "rotate-180" : ""
-                }`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {isLanguageDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-36 bg-[#0d203b]/95 border border-white/10 rounded-lg shadow-lg backdrop-blur-md overflow-hidden z-50">
-                {languages.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => {
-                      changeLanguage(lang.code as "en" | "tl");
-                      setIsLanguageDropdownOpen(false);
-                    }}
-                    className={`block w-full text-left px-4 py-2 text-sm transition-all duration-200 ${
-                      language === lang.code
-                        ? "bg-yellow-400 text-blue-900 font-semibold"
-                        : "text-slate-100 hover:bg-white/10 hover:text-yellow-300"
-                    }`}
-                  >
-                    {lang.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Mobile menu button (future use) */}
           <div className="md:hidden">

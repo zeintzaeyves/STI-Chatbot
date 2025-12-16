@@ -12,12 +12,16 @@ export async function POST(req) {
   }
 
   // allow only the admin MS email
-  if (email !== process.env.ADMIN_MS_EMAIL) {
-    return NextResponse.json(
-      { error: "Unauthorized Microsoft account" },
-      { status: 401 }
-    );
-  }
+const normalizedEmail = email.trim().toLowerCase();
+const adminEmail = process.env.ADMIN_MS_EMAIL?.trim().toLowerCase();
+
+if (normalizedEmail !== adminEmail) {
+  return NextResponse.json(
+    { error: "Unauthorized Microsoft account" },
+    { status: 401 }
+  );
+}
+
 
   const res = NextResponse.json({ success: true });
 

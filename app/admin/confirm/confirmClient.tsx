@@ -6,9 +6,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 export default function ConfirmClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const token = searchParams.get("token");
 
   useEffect(() => {
-    const token = searchParams.get("token");
     if (!token) return;
 
     fetch("/api/admin/pairing/confirm", {
@@ -16,17 +16,21 @@ export default function ConfirmClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token }),
     }).then(() => {
-      router.replace("/admin/dashboard");
+      setTimeout(() => {
+        router.replace("/admin/dashboard");
+      }, 1200);
     });
-  }, [searchParams, router]);
+  }, [token, router]);
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center gap-4 bg-[url('/hero4.png')] bg-cover bg-center">
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-8 text-center shadow-2xl">
-        <h1 className="text-white text-xl font-semibold">
-          Device Authorized
-        </h1>
-        <p className="text-white/70 text-sm mt-2">
+    <div className="h-screen flex flex-col items-center justify-center 
+      bg-[#081a2f] text-white">
+      <div className="bg-white/10 backdrop-blur-xl p-6 rounded-xl 
+        border border-white/20 shadow-lg">
+        <p className="text-lg font-medium">
+          ✅ Device authorized
+        </p>
+        <p className="text-sm text-white/70 mt-1">
           You may now return to your computer.
         </p>
       </div>

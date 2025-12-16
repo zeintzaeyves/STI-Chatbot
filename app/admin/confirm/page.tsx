@@ -1,13 +1,15 @@
 import { Suspense } from "react";
 import ConfirmClient from "./confirmClient";
 
-export default function ConfirmPage() {
+export default function Page() {
   return (
-    <Suspense fallback={
-      <div className="h-screen flex items-center justify-center text-white">
-        Authorizing device…
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="h-screen flex items-center justify-center">
+          Loading…
+        </div>
+      }
+    >
       <ConfirmClient />
     </Suspense>
   );

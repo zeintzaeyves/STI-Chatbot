@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-type HandbookType = "global" | "campus";
+type HandbookType = "global" | "campus" | "shs";
 
 interface HandbookInfo {
   displayName: string;
@@ -10,9 +10,13 @@ interface HandbookInfo {
 }
 
 export default function HandbookUploadPage() {
+  /* ============================
+     STATE
+  ============================ */
   const [files, setFiles] = useState<Record<HandbookType, File | null>>({
     global: null,
     campus: null,
+    shs: null,
   });
 
   const [handbooks, setHandbooks] = useState<
@@ -20,6 +24,7 @@ export default function HandbookUploadPage() {
   >({
     global: null,
     campus: null,
+    shs: null,
   });
 
   const [loadingType, setLoadingType] = useState<HandbookType | null>(null);
@@ -31,20 +36,19 @@ export default function HandbookUploadPage() {
   const eventSourceRef = useRef<EventSource | null>(null);
 
   /* ============================
-     LOAD HANDBOOKS
+     LOAD EXISTING HANDBOOKS
   ============================ */
   const loadHandbooks = async () => {
-    const [globalRes, campusRes] = await Promise.all([
-      fetch("/api/handbook/get?type=global"),
-      fetch("/api/handbook/get?type=campus"),
+    const [g, c, s] = await Promise.all([
+      fetch("/api/handbook/get?type=global").then((r) => r.json()),
+      fetch("/api/handbook/get?type=campus").then((r) => r.json()),
+      fetch("/api/handbook/get?type=shs").then((r) => r.json()),
     ]);
 
-    const globalData = await globalRes.json();
-    const campusData = await campusRes.json();
-
     setHandbooks({
-      global: globalData.exists ? globalData : null,
-      campus: campusData.exists ? campusData : null,
+      global: g.exists ? g : null,
+      campus: c.exists ? c : null,
+      shs: s.exists ? s : null,
     });
   };
 
@@ -57,6 +61,7 @@ export default function HandbookUploadPage() {
   ============================ */
   const listenToProgress = () => {
     eventSourceRef.current?.close();
+
     const es = new EventSource("/api/handbook/progress");
     eventSourceRef.current = es;
 
@@ -101,10 +106,8 @@ export default function HandbookUploadPage() {
     if (!data.success) {
       setStatus(`Upload failed: ${data.error || "Unknown error"}`);
     } else {
-      setStatus(
-        `${type === "global" ? "Global" : "Campus"} handbook uploaded successfully`
-      );
-      setFiles((prev) => ({ ...prev, [type]: null }));
+      setStatus("Handbook uploaded successfully.");
+      setFiles((p) => ({ ...p, [type]: null }));
       await loadHandbooks();
     }
 
@@ -124,10 +127,11 @@ export default function HandbookUploadPage() {
     const res = await fetch(`/api/handbook/delete?type=${type}`, {
       method: "DELETE",
     });
+
     const data = await res.json();
 
     if (data.success) {
-      setHandbooks((prev) => ({ ...prev, [type]: null }));
+      setHandbooks((p) => ({ ...p, [type]: null }));
       setStatus("Handbook deleted.");
     } else {
       setStatus("Delete failed.");
@@ -135,13 +139,17 @@ export default function HandbookUploadPage() {
   };
 
   /* ============================
-     CARD UI (GLASS)
+     CARD COMPONENT
   ============================ */
-  const renderCard = (
-    title: string,
-    type: HandbookType,
-    description: string
-  ) => {
+  const Card = ({
+    title,
+    description,
+    type,
+  }: {
+    title: string;
+    description: string;
+    type: HandbookType;
+  }) => {
     const handbook = handbooks[type];
     const isLoading = loadingType === type;
 
@@ -151,25 +159,25 @@ export default function HandbookUploadPage() {
         bg-white/10 backdrop-blur-xl
         border border-white/20
         shadow-lg shadow-black/40
-        transition hover:border-blue-400/40
       ">
-        {/* glow */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-0 hover:opacity-100 transition pointer-events-none" />
-
-        <h2 className="text-xl font-semibold text-white">
-          {title}
-        </h2>
-        <p className="text-slate-300 text-sm mt-1">
-          {description}
-        </p>
+        <h2 className="text-xl font-semibold text-white">{title}</h2>
+        <p className="text-slate-300 text-sm mt-1">{description}</p>
 
         {/* EXISTING PDF */}
         {handbook && (
-          <div className="mt-6 bg-black/30 backdrop-blur-md p-4 rounded-xl border border-green-400/40">
+          <div className="
+            mt-6 bg-black/30 backdrop-blur-md p-4 rounded-xl
+            border border-green-400/40
+          ">
             <p className="text-green-400 font-medium">✔ Uploaded PDF</p>
-            <p className="text-slate-200 mt-1">
+
+            <p
+              className="text-slate-200 mt-1 text-sm truncate"
+              title={handbook.displayName}
+            >
               {handbook.displayName}
             </p>
+
             <p className="text-slate-400 text-xs mt-1">
               {new Date(handbook.uploadedAt).toLocaleString()}
             </p>
@@ -182,7 +190,7 @@ export default function HandbookUploadPage() {
                 transition text-sm
               "
             >
-              Delete Handbook
+              Delete PDF
             </button>
           </div>
         )}
@@ -191,20 +199,21 @@ export default function HandbookUploadPage() {
         {!handbook && (
           <div className="mt-6">
             <input
+              key={files[type]?.name || "empty"}
+              id={`${type}-upload`}
               type="file"
               accept="application/pdf"
-              id={`${type}-${title}-upload`}
               className="hidden"
               onChange={(e) =>
-                setFiles((prev) => ({
-                  ...prev,
+                setFiles((p) => ({
+                  ...p,
                   [type]: e.target.files?.[0] ?? null,
                 }))
               }
             />
 
             <label
-              htmlFor={`${type}-${title}-upload`}
+              htmlFor={`${type}-upload`}
               className="
                 block cursor-pointer rounded-xl p-6 text-center
                 border border-dashed border-white/30
@@ -213,7 +222,10 @@ export default function HandbookUploadPage() {
               "
             >
               <div className="text-4xl mb-2">📄</div>
-              <p className="text-slate-200 text-sm">
+              <p
+                className="text-slate-200 text-sm truncate"
+                title={files[type]?.name}
+              >
                 {files[type]?.name || "Select PDF file"}
               </p>
             </label>
@@ -231,11 +243,12 @@ export default function HandbookUploadPage() {
               {isLoading ? "Processing…" : "Upload & Train AI"}
             </button>
 
-            {/* PROGRESS */}
             {isLoading && (
               <div className="mt-4">
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-slate-300">{stage}</span>
+                  <span className="text-slate-300 truncate max-w-[70%]">
+                    {stage}
+                  </span>
                   <span className="text-slate-400">{progress}%</span>
                 </div>
                 <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
@@ -257,32 +270,33 @@ export default function HandbookUploadPage() {
   ============================ */
   return (
     <div className="p-8 max-w-7xl mx-auto text-white">
-      <h1 className="text-3xl font-bold mb-8">
-        AI Handbook Manager
-      </h1>
+      <h1 className="text-3xl font-bold mb-8">AI Handbook Manager</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {renderCard(
-          "Global Handbook",
-          "global",
-          "Applies to all STI campuses"
-        )}
+        <Card
+          title="Global Handbook"
+          description="Applies to all STI campuses"
+          type="global"
+        />
 
-        {renderCard(
-          "Campus Handbook",
-          "campus",
-          "Policies specific to STI Tagaytay"
-        )}
+        <Card
+          title="Campus Handbook"
+          description="Policies specific to STI Tagaytay"
+          type="campus"
+        />
 
-        {renderCard(
-          "AI Knowledge Supplement",
-          "global",
-          "Additional references to enhance AI reasoning"
-        )}
+        <Card
+          title="Handbook SHS"
+          description="SHS-specific policies and guidelines"
+          type="shs"
+        />
       </div>
 
       {status && (
-        <div className="mt-6 bg-black/30 backdrop-blur-md p-4 rounded-xl border border-white/20">
+        <div className="
+          mt-6 bg-black/30 backdrop-blur-md
+          p-4 rounded-xl border border-white/20
+        ">
           <p className="text-slate-200">{status}</p>
         </div>
       )}

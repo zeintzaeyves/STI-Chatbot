@@ -20,7 +20,7 @@ const Navbar = () => {
     },
     {
       name: language === "en" ? "Contact Us" : "Makipag-ugnayan",
-      href: "https://www.facebook.com/tagaytay.sti.edu",
+      href: "https://www.facebook.com/stitagaytayadmission?mibextid=wwXIfr&rdid=kDiKqKfpuF7cADgh&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1H4RL9TsVP%2F%3Fmibextid%3DwwXIfr",
       external: true,
     },
   ];

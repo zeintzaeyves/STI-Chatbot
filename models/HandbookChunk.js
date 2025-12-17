@@ -7,13 +7,19 @@ const HandbookChunkSchema = new mongoose.Schema({
     required: true,
   },
 
-  // 🔑 IMPORTANT
   type: {
     type: String,
-    enum: ["campus", "global"],
+    enum: ["campus", "global", "shs"],
     required: true,
     index: true,
   },
+  scope: {
+    type: String,
+    enum: ["universal", "campus-dependent", "general"],
+    required: true,
+    index: true,
+  },
+
 
   chunkIndex: {
     type: Number,
@@ -46,7 +52,7 @@ const HandbookChunkSchema = new mongoose.Schema({
 });
 
 // ⚡ PERFORMANCE INDEXES
-HandbookChunkSchema.index({ type: 1 });
+HandbookChunkSchema.index({ type: 1, scope: 1 });
 HandbookChunkSchema.index({ handbookId: 1 });
 
 export default mongoose.models.HandbookChunk ||

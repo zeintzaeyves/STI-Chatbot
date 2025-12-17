@@ -38,7 +38,7 @@ const Chatbot: React.FC = () => {
   const translations = {
     en: {
       header: "How can we assist you?",
-      subheader: "Ask anything about STI — we're here to help.",
+      subheader: "Ask anything about STI Tagaytay, we're here to help.",
       placeholder: "Type your question...",
       suggestions: [
         "How much is the tuition fee?",

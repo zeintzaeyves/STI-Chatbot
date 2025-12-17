@@ -144,6 +144,27 @@ function preprocessTextForTables(rawText) {
 
   return out.join("\n");
 }
+function inferScope(sectionTitle = "", text = "", type = "") {
+  const t = `${sectionTitle} ${text}`.toLowerCase();
+
+  // UNIVERSAL STI RULES
+  if (
+    /vape|smoking|discipline|conduct|grading|attendance|exam|academic structure/i.test(t)
+  ) {
+    return "universal";
+  }
+
+  // CAMPUS / LEVEL DEPENDENT
+  if (
+    /program|offer|strand|junior high|senior high|facility|office|department/i.test(t)
+  ) {
+    return "campus-dependent";
+  }
+
+  // DEFAULT
+  return "general";
+}
+
 
 /* ============================
    POST UPLOAD
@@ -153,14 +174,15 @@ export async function POST(req) {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get("type"); // global | campus
+    const type = searchParams.get("type"); // global | campus | shs
 
-    if (!type) {
+    if (!["global", "campus", "shs"].includes(type)) {
       return NextResponse.json(
-        { success: false, error: "Missing handbook type" },
+        { success: false, error: "Invalid handbook type" },
         { status: 400 }
       );
     }
+
 
     const existing = await Handbook.findOne({ type });
     if (existing) {
@@ -236,15 +258,19 @@ ${processed.slice(0, 12000)}
         input: text,
       });
 
+      const scope = inferScope(section, text, type);
+
       chunkDocs.push({
         handbookId: handbook._id,
-        type,
+        type,      // global | campus | shs
+        scope,     // 🔥 DITO GINAGAMIT YUNG HELPER
         chunkIndex: i,
         text,
-        length: text.length, // ✅ REQUIRED BY SCHEMA
+        length: text.length,
         sectionTitle: section,
         embedding: emb.data[0].embedding,
       });
+
 
 
       const pct = 40 + Math.round(((i + 1) / chunks.length) * 50);

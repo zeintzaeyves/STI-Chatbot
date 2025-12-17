@@ -135,7 +135,7 @@ export default function HandbookUploadPage() {
   };
 
   /* ============================
-     CARD UI
+     CARD UI (GLASS)
   ============================ */
   const renderCard = (
     title: string,
@@ -146,35 +146,54 @@ export default function HandbookUploadPage() {
     const isLoading = loadingType === type;
 
     return (
-      <div className="bg-slate-700 rounded-xl p-6 border border-white/10">
-        <h2 className="text-xl font-semibold text-yellow-300">{title}</h2>
-        <p className="text-slate-400 text-sm mt-1">{description}</p>
+      <div className="
+        relative rounded-2xl p-6
+        bg-white/10 backdrop-blur-xl
+        border border-white/20
+        shadow-lg shadow-black/40
+        transition hover:border-blue-400/40
+      ">
+        {/* glow */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-0 hover:opacity-100 transition pointer-events-none" />
 
-        {/* WHEN FILE EXISTS */}
+        <h2 className="text-xl font-semibold text-white">
+          {title}
+        </h2>
+        <p className="text-slate-300 text-sm mt-1">
+          {description}
+        </p>
+
+        {/* EXISTING PDF */}
         {handbook && (
-          <div className="mt-5 bg-slate-800 p-4 rounded-lg border border-green-500">
-            <p className="text-green-400 font-medium">Uploaded PDF</p>
-            <p className="text-slate-300 mt-1">{handbook.displayName}</p>
-            <p className="text-slate-500 text-xs mt-1">
+          <div className="mt-6 bg-black/30 backdrop-blur-md p-4 rounded-xl border border-green-400/40">
+            <p className="text-green-400 font-medium">✔ Uploaded PDF</p>
+            <p className="text-slate-200 mt-1">
+              {handbook.displayName}
+            </p>
+            <p className="text-slate-400 text-xs mt-1">
               {new Date(handbook.uploadedAt).toLocaleString()}
             </p>
 
             <button
               onClick={() => deleteHandbook(type)}
-              className="mt-4 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm"
+              className="
+                mt-4 w-full py-2 rounded-lg
+                bg-red-500/80 hover:bg-red-600
+                transition text-sm
+              "
             >
               Delete Handbook
             </button>
           </div>
         )}
 
-        {/* UPLOAD UI – ONLY WHEN EMPTY */}
+        {/* UPLOAD */}
         {!handbook && (
           <div className="mt-6">
             <input
               type="file"
               accept="application/pdf"
-              id={`${type}-upload`}
+              id={`${type}-${title}-upload`}
               className="hidden"
               onChange={(e) =>
                 setFiles((prev) => ({
@@ -185,21 +204,31 @@ export default function HandbookUploadPage() {
             />
 
             <label
-              htmlFor={`${type}-upload`}
-              className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-blue-500 transition"
+              htmlFor={`${type}-${title}-upload`}
+              className="
+                block cursor-pointer rounded-xl p-6 text-center
+                border border-dashed border-white/30
+                bg-black/20 backdrop-blur-md
+                hover:border-blue-400 transition
+              "
             >
               <div className="text-4xl mb-2">📄</div>
-              <p className="text-slate-300">
-                {files[type]?.name || "Choose PDF"}
+              <p className="text-slate-200 text-sm">
+                {files[type]?.name || "Select PDF file"}
               </p>
             </label>
 
             <button
               disabled={isLoading}
               onClick={() => uploadPDF(type)}
-              className="mt-4 w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 rounded-lg"
+              className="
+                mt-4 w-full py-3 rounded-xl
+                bg-blue-500/80 hover:bg-blue-600
+                disabled:bg-slate-500
+                transition
+              "
             >
-              {isLoading ? "Processing…" : "Upload & Process"}
+              {isLoading ? "Processing…" : "Upload & Train AI"}
             </button>
 
             {/* PROGRESS */}
@@ -209,9 +238,9 @@ export default function HandbookUploadPage() {
                   <span className="text-slate-300">{stage}</span>
                   <span className="text-slate-400">{progress}%</span>
                 </div>
-                <div className="w-full bg-slate-600 h-2 rounded-full overflow-hidden">
+                <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
                   <div
-                    className="bg-blue-500 h-2 transition-all"
+                    className="bg-gradient-to-r from-blue-400 to-purple-500 h-2 transition-all"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -227,25 +256,34 @@ export default function HandbookUploadPage() {
      RENDER
   ============================ */
   return (
-    <div className="p-8 max-w-5xl mx-auto text-white">
-      <h1 className="text-3xl font-bold mb-8">Handbook Manager</h1>
+    <div className="p-8 max-w-7xl mx-auto text-white">
+      <h1 className="text-3xl font-bold mb-8">
+        AI Handbook Manager
+      </h1>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {renderCard(
           "Global Handbook",
           "global",
           "Applies to all STI campuses"
         )}
+
         {renderCard(
-          "Campus-Specific Handbook",
+          "Campus Handbook",
           "campus",
           "Policies specific to STI Tagaytay"
+        )}
+
+        {renderCard(
+          "AI Knowledge Supplement",
+          "global",
+          "Additional references to enhance AI reasoning"
         )}
       </div>
 
       {status && (
-        <div className="mt-6 bg-slate-700 p-4 rounded-lg border border-slate-600">
-          <p className="text-slate-300">{status}</p>
+        <div className="mt-6 bg-black/30 backdrop-blur-md p-4 rounded-xl border border-white/20">
+          <p className="text-slate-200">{status}</p>
         </div>
       )}
     </div>

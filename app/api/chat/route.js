@@ -39,6 +39,43 @@ function isClearlySTIRelated(text = "") {
   return /\bsti\b|campus|student|school|college|tagaytay/i.test(text);
 }
 
+const CAMPUS_PROFILE = {
+  tagaytay: {
+    programs: {
+      jhs: false,
+      shs: true,
+      college: true,
+    },
+  },
+};
+
+function detectProgramFromChunk(sectionTitle = "", text = "") {
+  const t = `${sectionTitle} ${text}`.toLowerCase();
+
+  if (/junior high|grades?\s*7|grades?\s*8|grades?\s*9|grades?\s*10|jhs\b/.test(t)) {
+    return "jhs";
+  }
+
+  if (/senior high|shs\b|grade\s*11|grade\s*12/.test(t)) {
+    return "shs";
+  }
+
+  return null;
+}
+
+function filterByCampusPrograms(hits, campus = "tagaytay") {
+  return hits.filter(h => {
+    const program = detectProgramFromChunk(h.sectionTitle, h.text);
+
+    // If not program-specific, allow it
+    if (!program) return true;
+
+    // Allow only if campus supports that program
+    return CAMPUS_PROFILE[campus]?.programs?.[program] === true;
+  });
+}
+
+
 
 function isAskingForName(text = "") {
   const patterns = [
@@ -613,9 +650,12 @@ export async function POST(req) {
          🟢 DETAIL MODE (DEFAULT)
          ========================= */
     } else {
-      const hits = await searchHandbook(effectiveRAGQuery);
+      let hits = await searchHandbook(effectiveRAGQuery);
 
-      const weak = isWeakContext(hits); // 👈 ITO ANG SINASABI KO
+      // 🔥 DITO LIGWAK ANG JHS
+      hits = filterByCampusPrograms(hits, "tagaytay");
+
+      const weak = isWeakContext(hits);
 
       hbContext = hits.length
         ? `
@@ -627,6 +667,7 @@ ${hits.map((h, i) =>
 `
         : "";
     }
+
 
 
     /* =========================

@@ -35,6 +35,10 @@ function isWeakContext(hits = []) {
   return avgScore < 0.55; // adjust threshold if needed
 }
 
+function isClearlySTIRelated(text = "") {
+  return /\bsti\b|campus|student|school|college|tagaytay/i.test(text);
+}
+
 
 function isAskingForName(text = "") {
   const patterns = [
@@ -122,6 +126,7 @@ function detectLanguageAuto(text = "") {
   console.log(`✅ Detected language: English (default)`);
   return "en";
 }
+
 
 /* =========================
    🆕 ENHANCED NAME EXTRACTION
@@ -554,24 +559,39 @@ export async function POST(req) {
     /\b(investing|investment|trading)\b/i
   ];
 
-  const otherCampusPattern = /\bsti\s+(?!tagaytay\b)(college|caloocan|alabang|cubao|quezon|makati|cebu|davao)[a-z ]*/i;
+  const isTagaytay = /\btagaytay\b/i.test(userMessage);
 
-  if (irrelevantPatterns.some(rx => rx.test(userMessage))) {
-    const msg = lang === "tl"
-      ? `❗ **Hindi saklaw ng STI Assist ang tanong na ito.**\nPwede kitang tulungan sa STI-related concerns, policies, at proseso.`
-      : `❗ **This question is outside the scope of STI Assist.**\nI can only help with STI-related concerns, policies, and student processes.`;
+  const otherCampusPattern =
+    /\bsti\b(?!.*\btagaytay\b).*\b(caloocan|alabang|cubao|quezon|makati|cebu|davao)\b/i;
 
-    return new Response(msg, { status: 200 });
+  function isClearlySTIRelated(text = "") {
+    return /\bsti\b|campus|student|school|college|tagaytay/i.test(text);
   }
 
-  if (otherCampusPattern.test(userMessage)) {
+  // Irrelevant guard (safe)
+  if (
+    !isClearlySTIRelated(userMessage) &&
+    irrelevantPatterns.some(rx => rx.test(userMessage))
+  ) {
+    return new Response(
+      lang === "tl"
+        ? `❗ **Hindi saklaw ng STI Assist ang tanong na ito.**`
+        : `❗ **This question is outside the scope of STI Assist.**`,
+      { status: 200 }
+    );
+  }
+
+  // Other campus guard
+  if (!isTagaytay && otherCampusPattern.test(userMessage)) {
     const campus = otherCampusPattern.exec(userMessage)[1];
-    const msg = lang === "tl"
-      ? `ℹ️ **Hindi ako makakapagbigay ng impormasyon para sa STI ${campus}.**\nPwede kitang tulungan sa *general STI info* o *STI Tagaytay-specific* policies.`
-      : `ℹ️ **I cannot provide information for STI ${campus}.**\nBut I can give *general STI information* or *STI Tagaytay-specific* policies.`;
-
-    return new Response(msg, { status: 200 });
+    return new Response(
+      lang === "tl"
+        ? `ℹ️ **Hindi ako makakapagbigay ng impormasyon para sa STI ${campus}.**`
+        : `ℹ️ **I cannot provide information for STI ${campus}.**`,
+      { status: 200 }
+    );
   }
+
 
   let effectiveRAGQuery = effectiveQuery;
   if (lastInquiry && isShortAffirmation(userMessage)) {

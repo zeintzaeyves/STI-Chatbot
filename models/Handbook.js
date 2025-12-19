@@ -6,7 +6,7 @@ const HandbookSchema = new mongoose.Schema(
     // 🔑 IMPORTANT: separates global vs campus
     type: {
       type: String,
-      enum: ["global", "campus"],
+      enum: ["global", "campus", "shs"],
       required: true,
       index: true,
       unique: true, // ✅ ensures ONE handbook per type

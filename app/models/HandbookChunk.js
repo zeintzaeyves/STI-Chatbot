@@ -5,32 +5,18 @@ const HandbookChunkSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Handbook",
     required: true,
+    index: true,
   },
 
-  // 🔑 IMPORTANT
-  type: {
+  // 🔑 Only what we need
+  source: {
     type: String,
     enum: ["campus", "global"],
     required: true,
     index: true,
   },
 
-  chunkIndex: {
-    type: Number,
-    required: true,
-  },
-
   text: {
-    type: String,
-    required: true,
-  },
-
-  length: {
-    type: Number,
-    required: true,
-  },
-
-  sectionTitle: {
     type: String,
     required: true,
   },
@@ -41,13 +27,14 @@ const HandbookChunkSchema = new mongoose.Schema({
     dimensions: 1536,
   },
 
-  prevSection: String,
-  nextSection: String,
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-// ⚡ PERFORMANCE INDEXES
-HandbookChunkSchema.index({ type: 1 });
-HandbookChunkSchema.index({ handbookId: 1 });
+// ⚡ Vector + filter index
+HandbookChunkSchema.index({ source: 1 });
 
 export default mongoose.models.HandbookChunk ||
   mongoose.model("HandbookChunk", HandbookChunkSchema);

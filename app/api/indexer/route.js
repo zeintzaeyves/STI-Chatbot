@@ -3,57 +3,83 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@lib/mongodb";
 import Handbook from "@models/Handbook";
 import HandbookChunk from "@models/HandbookChunk";
-import { chunkText } from "@lib/text";
 import { getEmbedding } from "@lib/embedText";
 
-export async function POST(req) {
+/* =========================
+   SIMPLE TEXT CHUNKER
+   ========================= */
+function chunkText(text, chunkSize = 1200, overlap = 200) {
+  const chunks = [];
+  let start = 0;
+
+  while (start < text.length) {
+    const end = Math.min(start + chunkSize, text.length);
+    const chunk = text.slice(start, end).trim();
+
+    if (chunk.length > 100) {
+      chunks.push(chunk);
+    }
+
+    start = end - overlap;
+    if (start < 0) start = 0;
+  }
+
+  return chunks;
+}
+
+/* =========================
+   INDEXER ROUTE
+   ========================= */
+export async function POST() {
   try {
     await connectDB();
 
+    // Get latest uploaded handbook
     const handbook = await Handbook.findOne().sort({ uploadedAt: -1 });
-    if (!handbook) {
-      return NextResponse.json({ ok: false, error: "No handbook found." });
+    if (!handbook || !handbook.content) {
+      return NextResponse.json({
+        ok: false,
+        error: "No handbook content found.",
+      });
     }
 
-    // Delete old chunks for this handbook
+    // 🔥 DELETE OLD CHUNKS FOR THIS HANDBOOK
     await HandbookChunk.deleteMany({ handbookId: handbook._id });
 
-    // Chunk the text
-    const chunks = chunkText(handbook.content, { chunkSize: 1200, chunkOverlap: 200 });
+    // 🔥 PURE TEXT CHUNKING
+    const chunks = chunkText(handbook.content);
 
-    // Compute embeddings if provider available
     const useEmbeddings = !!process.env.OPENAI_API_KEY;
-    const saved = [];
-    for (let i = 0; i < chunks.length; i++) {
-      const c = chunks[i];
+    let savedCount = 0;
+
+    for (const text of chunks) {
       let embedding = undefined;
+
       if (useEmbeddings) {
-        try {
-          embedding = await getEmbedding(c.text);
-        } catch (err) {
-          console.error("Embedding error for chunk", i, err);
-          embedding = undefined;
-        }
+        embedding = await getEmbedding(text);
       }
 
-      const doc = await HandbookChunk.create({
+      await HandbookChunk.create({
         handbookId: handbook._id,
-        chunkIndex: i,
-        text: c.text,
-        length: c.length,
+        source: "campus", // or "global" depending on upload
+        text,
         embedding,
       });
-      saved.push(doc);
+
+      savedCount++;
     }
 
     return NextResponse.json({
       ok: true,
-      pages: Math.ceil(handbook.content.length / 2000),
-      chunks: saved.length,
-      embeddings: useEmbeddings,
+      handbook: handbook.displayName,
+      chunksCreated: savedCount,
+      embeddingsUsed: useEmbeddings,
     });
   } catch (err) {
     console.error("Indexer error:", err);
-    return NextResponse.json({ ok: false, error: err.message });
+    return NextResponse.json({
+      ok: false,
+      error: err.message,
+    });
   }
 }

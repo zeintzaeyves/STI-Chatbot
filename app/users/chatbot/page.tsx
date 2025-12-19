@@ -176,7 +176,12 @@ const Chatbot: React.FC = () => {
       const reader = res.body.getReader();
       streamReaderRef.current = reader;
       await streamResponse(reader);
-    } catch (err) {
+    } catch (err: any) {
+      // Ignore AbortError - it's expected when user stops the request
+      if (err?.name === 'AbortError') {
+        console.log("Request stopped by user");
+        return;
+      }
       console.error("STREAM ERROR:", err);
       setMessages((prev) => [
         ...prev,
@@ -211,8 +216,11 @@ const Chatbot: React.FC = () => {
         abortControllerRef.current = null;
       }
       setIsLoading(false);
-    } catch (e) {
-      console.error("Stop error:", e);
+    } catch (e: any) {
+      // Ignore AbortError - it's expected when stopping
+      if (e?.name !== 'AbortError') {
+        console.error("Stop error:", e);
+      }
     }
   };
 
@@ -380,16 +388,22 @@ const Chatbot: React.FC = () => {
         {isLoading ? (
           <button
             onClick={handleStop}
-            className="px-4 sm:px-6 py-2 rounded-full bg-red-600 hover:bg-red-500 text-white text-sm sm:text-base font-medium transition shadow-red-500/20 shadow-md"
+            className="p-2 rounded-full bg-red-600/10 hover:bg-red-600/20 text-red-400 transition"
+            title="Stop generating"
           >
-            Stop
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <rect x="6" y="6" width="12" height="12" rx="1" />
+            </svg>
           </button>
         ) : (
           <button
             onClick={() => handleSubmit()}
-            className="px-4 sm:px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-sm sm:text-base font-medium transition shadow-blue-500/20 shadow-md"
+            className="p-2 rounded-full bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 transition"
+            title="Send message"
           >
-            Send
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
           </button>
         )}
       </div>

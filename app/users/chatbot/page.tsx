@@ -200,6 +200,22 @@ const Chatbot: React.FC = () => {
     setInputValue("");
   };
 
+  const handleStop = async () => {
+    try {
+      if (streamReaderRef.current) {
+        await streamReaderRef.current.cancel();
+        streamReaderRef.current = null;
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      setIsLoading(false);
+    } catch (e) {
+      console.error("Stop error:", e);
+    }
+  };
+
   const handleFeedbackClose = () => {
     setShowFeedback(false);
     setFeedbackDismissed(true);
@@ -244,7 +260,6 @@ const Chatbot: React.FC = () => {
     }
   };
 
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -256,19 +271,19 @@ const Chatbot: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen max-w-6xl mx-auto px-6 pb-24">
-      <div className="text-center mt-10 mb-8">
-        <h1 className="text-4xl font-semibold text-white">{t.header}</h1>
-        <p className="text-slate-300 mt-2">{t.subheader}</p>
+    <div className="flex flex-col h-screen max-w-6xl mx-auto px-4 sm:px-6 pb-20 sm:pb-24">
+      <div className="text-center mt-6 sm:mt-10 mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-white px-2">{t.header}</h1>
+        <p className="text-slate-300 mt-2 text-sm sm:text-base px-2">{t.subheader}</p>
       </div>
 
       {!showChat && (
-        <div className="flex flex-wrap justify-center gap-3 mb-8">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 px-2">
           {t.suggestions.map((q, i) => (
             <button
               key={i}
               onClick={() => handleSuggestionClick(q)}
-              className="px-4 py-2 rounded-full border border-white/10 text-slate-200 hover:bg-white/5 transition"
+              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-full border border-white/10 text-slate-200 hover:bg-white/5 transition"
             >
               {q}
             </button>
@@ -277,7 +292,7 @@ const Chatbot: React.FC = () => {
       )}
 
       <div className="flex-1 overflow-hidden">
-        <div ref={chatRef} className="h-full overflow-y-auto space-y-5 pb-40 px-2">
+        <div ref={chatRef} className="h-full overflow-y-auto space-y-4 sm:space-y-5 pb-32 sm:pb-40 px-2">
           <AnimatePresence>
             {messages.map((m, i) => (
               <motion.div
@@ -288,7 +303,7 @@ const Chatbot: React.FC = () => {
                 className={`flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[85%] px-5 py-4 rounded-2xl text-sm leading-relaxed backdrop-blur border shadow-sm ${m.sender === "user"
+                  className={`max-w-[90%] sm:max-w-[85%] px-4 sm:px-5 py-3 sm:py-4 rounded-2xl text-xs sm:text-sm leading-relaxed backdrop-blur border shadow-sm ${m.sender === "user"
                     ? "bg-blue-600/90 border-blue-400/30 text-white rounded-br-md"
                     : "bg-white/5 border-white/10 text-slate-200 rounded-bl-md"
                     }`}
@@ -334,7 +349,7 @@ const Chatbot: React.FC = () => {
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-slate-300 flex items-center gap-2">
+              <div className="px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-white/5 border border-white/10 text-slate-300 flex items-center gap-2">
                 <span className="text-xs font-medium opacity-70">STI Assist is typing</span>
                 <span className="flex gap-1">
                   <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
@@ -347,7 +362,7 @@ const Chatbot: React.FC = () => {
         </div>
       </div>
 
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-5xl flex items-center bg-white/5 backdrop-blur-md border border-white/10 rounded-full px-3 shadow-lg">
+      <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-full max-w-5xl flex items-center bg-white/5 backdrop-blur-md border border-white/10 rounded-full px-2 sm:px-3 shadow-lg">
         <input
           ref={inputRef}
           value={inputValue}
@@ -359,14 +374,24 @@ const Chatbot: React.FC = () => {
             }
           }}
           placeholder={t.placeholder}
-          className="flex-1 px-4 py-3 bg-transparent text-white placeholder-slate-400 outline-none"
+          className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-transparent text-white text-sm sm:text-base placeholder-slate-400 outline-none"
+          disabled={isLoading}
         />
-        <button
-          onClick={() => handleSubmit()}
-          className="px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-medium transition shadow-blue-500/20 shadow-md"
-        >
-          Send
-        </button>
+        {isLoading ? (
+          <button
+            onClick={handleStop}
+            className="px-4 sm:px-6 py-2 rounded-full bg-red-600 hover:bg-red-500 text-white text-sm sm:text-base font-medium transition shadow-red-500/20 shadow-md"
+          >
+            Stop
+          </button>
+        ) : (
+          <button
+            onClick={() => handleSubmit()}
+            className="px-4 sm:px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-sm sm:text-base font-medium transition shadow-blue-500/20 shadow-md"
+          >
+            Send
+          </button>
+        )}
       </div>
 
       {/* Feedback Popup - Bottom Center */}
@@ -376,7 +401,7 @@ const Chatbot: React.FC = () => {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-2xl mx-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
+            className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] sm:w-full max-w-2xl bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
           >
             {/* Close Button */}
             <button
@@ -426,7 +451,6 @@ const Chatbot: React.FC = () => {
                 </div>
               </div>
             )}
-
 
             {/* Form Step */}
             {feedbackStep === "form" && (
@@ -510,7 +534,6 @@ const Chatbot: React.FC = () => {
                 </p>
               </div>
             )}
-
           </motion.div>
         )}
       </AnimatePresence>

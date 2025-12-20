@@ -17,7 +17,7 @@ import {
 
 interface Inquiry {
   _id: string;
-  inquiryId: string;
+  inquiryId?: string;
   userQuery: string;
   botResponse?: string;
   status: string;
@@ -36,13 +36,14 @@ export default function ChatbotSystemPage() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  /* -------------------- REAL-TIME INQUIRIES -------------------- */
+  /* ==================== REAL-TIME INQUIRIES ==================== */
   useEffect(() => {
     const fetchInquiries = async () => {
       const res = await fetch("/api/inquiries");
       const data = await res.json();
       setInquiries(Array.isArray(data) ? data : []);
     };
+
     fetchInquiries();
 
     const inquiryStream = new EventSource("/api/inquiries/stream");
@@ -53,24 +54,37 @@ export default function ChatbotSystemPage() {
       const newInquiry = JSON.parse(e.data);
 
       setInquiries((prev) => {
-        const exists = prev.some((x) => x._id === newInquiry._id);
+        const safePrev = Array.isArray(prev) ? prev : [];
+        const exists = safePrev.some((x) => x._id === newInquiry._id);
+
         if (exists) {
-          return prev.map((x) => (x._id === newInquiry._id ? newInquiry : x));
+          return safePrev.map((x) =>
+            x._id === newInquiry._id ? newInquiry : x
+          );
         }
-        return [newInquiry, ...prev];
+
+        return [newInquiry, ...safePrev];
       });
     };
 
     return () => inquiryStream.close();
   }, []);
 
-  /* -------------------- REAL-TIME FEEDBACK -------------------- */
+  /* ==================== REAL-TIME FEEDBACK ==================== */
   useEffect(() => {
     const fetchFeedbacks = async () => {
       const res = await fetch("/api/feedback");
       const data = await res.json();
-      setFeedbacks(Array.isArray(data) ? data : []);
+
+      const normalized = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
+
+      setFeedbacks(normalized);
     };
+
     fetchFeedbacks();
 
     const feedbackStream = new EventSource("/api/feedback/stream");
@@ -80,63 +94,86 @@ export default function ChatbotSystemPage() {
 
       const payload = JSON.parse(e.data);
 
-      if (payload.type === "insert") {
-        setFeedbacks((prev) => [payload.data, ...prev]);
-      }
+      setFeedbacks((prev) => {
+        const safePrev = Array.isArray(prev) ? prev : [];
 
-      if (payload.type === "update") {
-        setFeedbacks((prev) =>
-          prev.map((f) => (f._id === payload.data._id ? payload.data : f))
-        );
-      }
+        if (payload.type === "insert") {
+          return [payload.data, ...safePrev];
+        }
 
-      if (payload.type === "delete") {
-        setFeedbacks((prev) => prev.filter((f) => f._id !== payload.id));
-      }
+        if (payload.type === "update") {
+          return safePrev.map((f) =>
+            f._id === payload.data._id ? payload.data : f
+          );
+        }
+
+        if (payload.type === "delete") {
+          return safePrev.filter((f) => f._id !== payload.id);
+        }
+
+        return safePrev;
+      });
     };
 
     return () => feedbackStream.close();
   }, []);
 
-  /* -------------------- MANUAL REFRESH -------------------- */
+  /* ==================== MANUAL REFRESH ==================== */
   const refreshData = async () => {
     setIsRefreshing(true);
+
     await Promise.all([
-      fetch("/api/inquiries").then((r) => r.json()).then(setInquiries),
-      fetch("/api/feedback").then((r) => r.json()).then(setFeedbacks),
+      fetch("/api/inquiries")
+        .then((r) => r.json())
+        .then((d) => setInquiries(Array.isArray(d) ? d : [])),
+
+      fetch("/api/feedback")
+        .then((r) => r.json())
+        .then((d) =>
+          setFeedbacks(
+            Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : []
+          )
+        ),
     ]);
+
     setTimeout(() => setIsRefreshing(false), 700);
   };
 
-  /* -------------------- COMPUTED STATS -------------------- */
-  const totalInquiries = inquiries.length;
+  /* ==================== SAFE DATA ==================== */
+  const safeInquiries = Array.isArray(inquiries) ? inquiries : [];
+  const safeFeedbacks = Array.isArray(feedbacks) ? feedbacks : [];
 
-  const solved = inquiries.filter((i) => i.status === "solved").length;
-  const partial = inquiries.filter((i) => i.status === "partial").length;
-  const unresolved = inquiries.filter((i) => i.status === "unresolved").length;
+  /* ==================== STATS ==================== */
+  const totalInquiries = safeInquiries.length;
+  const solved = safeInquiries.filter((i) => i.status === "solved").length;
+  const unresolved = safeInquiries.filter(
+    (i) => i.status === "unresolved"
+  ).length;
 
-  // Feedback stats
-  const positive = feedbacks.filter((f) => f.rating === "positive").length;
-  const negative = feedbacks.filter((f) => f.rating === "negative").length;
+  const positive = safeFeedbacks.filter(
+    (f) => f.rating === "positive"
+  ).length;
+  const negative = safeFeedbacks.filter(
+    (f) => f.rating === "negative"
+  ).length;
+
   const totalFeedback = positive + negative;
 
-  // Replace avgRating → Positive Percentage
   const positivePercentage = totalFeedback
     ? Math.round((positive / totalFeedback) * 100)
     : 0;
 
-  // KB accuracy = solved inquiries / total inquiries
   const knowledgeBaseRate = totalInquiries
     ? Math.round((solved / totalInquiries) * 100)
     : 0;
 
-  const geminiRate = 100 - knowledgeBaseRate;
+  const aiReasoningRate = 100 - knowledgeBaseRate;
 
-  /* -------------------- CHART DATA -------------------- */
+  /* ==================== CHART DATA ==================== */
   const monthlyCounts: Record<string, { inquiries: number; feedback: number }> =
     {};
 
-  inquiries.forEach((inq) => {
+  safeInquiries.forEach((inq) => {
     const m = new Date(inq.createdAt).toLocaleString("default", {
       month: "short",
     });
@@ -144,11 +181,9 @@ export default function ChatbotSystemPage() {
     monthlyCounts[m].inquiries++;
   });
 
-  feedbacks.forEach((fb) => {
+  safeFeedbacks.forEach((fb) => {
     const m = fb.timestamp
-      ? new Date(fb.timestamp).toLocaleString("default", {
-          month: "short",
-        })
+      ? new Date(fb.timestamp).toLocaleString("default", { month: "short" })
       : "Unknown";
 
     if (!monthlyCounts[m]) monthlyCounts[m] = { inquiries: 0, feedback: 0 };
@@ -159,25 +194,28 @@ export default function ChatbotSystemPage() {
     ([name, val]) => ({ name, ...val })
   );
 
-  /* -------------------- SENTIMENT / SOURCE DATA -------------------- */
   const sentimentData = [
     { name: "Positive", value: positive },
     { name: "Negative", value: negative },
   ];
 
   const sourceData = [
-    { name: "KnowledgeBase", value: knowledgeBaseRate },
-    { name: "Gemini", value: geminiRate },
+    { name: "Handbook-Based", value: knowledgeBaseRate },
+    { name: "AI Reasoning", value: aiReasoningRate },
   ];
 
-  /* -------------------- UI -------------------- */
+  /* ==================== UI ==================== */
   return (
     <div className="p-6 space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-white">Chatbot System</h1>
-          <p className="text-white/70 mt-1">Real-time analytics and system overview</p>
+          <h1 className="text-3xl font-semibold text-white">
+            Chatbot System Dashboard
+          </h1>
+          <p className="text-white/70 mt-1">
+            Real-time inquiry monitoring and AI-assisted response analytics
+          </p>
         </div>
 
         <button
@@ -203,38 +241,33 @@ export default function ChatbotSystemPage() {
             className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-6 shadow-lg"
           >
             <p className="text-sm text-white/70 mb-1">{stat.title}</p>
-            <p className={`text-3xl font-semibold ${stat.color}`}>{stat.value}</p>
+            <p className={`text-3xl font-semibold ${stat.color}`}>
+              {stat.value}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Model Overview Section */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* AI Model Info */}
         <div className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-white mb-4">AI Model Information</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">
+            AI Model Information
+          </h3>
 
           <div className="space-y-3 text-sm text-white/80">
             <div className="flex justify-between">
               <span className="text-white/60">Model:</span>
-              <span className="font-medium">Gemini 1.5 Flash</span>
+              <span className="font-medium">OpenAI GPT-4.1</span>
             </div>
-
             <div className="flex justify-between">
-              <span className="text-white/60">Status:</span>
-              <span className="text-green-400 font-medium">Active</span>
+              <span className="text-white/60">Response Mode:</span>
+              <span className="font-medium">Real-time (streamed)</span>
             </div>
-
             <div className="flex justify-between">
-              <span className="text-white/60">Average Latency:</span>
-              <span className="font-medium">1.2s</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-white/60">KB Accuracy:</span>
+              <span className="text-white/60">Knowledge Coverage:</span>
               <span className="font-medium">{knowledgeBaseRate}%</span>
             </div>
-
             <div className="flex justify-between">
               <span className="text-white/60">Unresolved:</span>
               <span className="font-medium">{unresolved}</span>
@@ -242,71 +275,64 @@ export default function ChatbotSystemPage() {
           </div>
         </div>
 
-        {/* AI Source Breakdown */}
         <div className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-white mb-4">AI Source Breakdown</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">
+            Response Source Distribution
+          </h3>
 
-          <div className="flex flex-col items-center justify-center">
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={sourceData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  dataKey="value"
-                >
-                  <Cell fill="#22c55e" />
-                  <Cell fill="#3b82f6" />
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie
+                data={sourceData}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={80}
+                dataKey="value"
+              >
+                <Cell fill="#22c55e" />
+                <Cell fill="#3b82f6" />
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Feedback Sentiment */}
         <div className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-white mb-4">Feedback Sentiment</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">
+            Feedback Sentiment
+          </h3>
 
-          <div className="flex flex-col items-center justify-center">
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={sentimentData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value">
-                  <Cell fill="#22c55e" />
-                  <Cell fill="#ef4444" />
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-
-            <div className="flex gap-4 mt-4 text-xs text-white/80">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 bg-green-400 rounded-full"></span>
-                <span>Positive {positive}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 bg-red-400 rounded-full"></span>
-                <span>Negative {negative}</span>
-              </div>
-            </div>
-          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie
+                data={sentimentData}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={80}
+                dataKey="value"
+              >
+                <Cell fill="#22c55e" />
+                <Cell fill="#ef4444" />
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      {/* LINE CHART */}
       <div className="bg-white/10 backdrop-blur-lg rounded-lg border border-white/20 p-6 shadow-lg">
-        <h3 className="text-lg font-semibold text-white mb-4">Inquiries & Feedback Over Time</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Inquiries and Feedback Over Time
+        </h3>
 
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={performanceData}>
             <CartesianGrid stroke="#ffffff30" />
             <XAxis dataKey="name" stroke="#ffffff80" />
             <YAxis stroke="#ffffff80" />
-
             <Tooltip />
-
             <Line type="monotone" dataKey="inquiries" stroke="#60a5fa" strokeWidth={2} />
             <Line type="monotone" dataKey="feedback" stroke="#facc15" strokeWidth={2} />
           </LineChart>

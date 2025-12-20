@@ -8,7 +8,7 @@ export async function GET(req) {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get("type"); // global | campus
+    const type = searchParams.get("type"); 
 
     if (!type) {
       return NextResponse.json({ exists: false });
